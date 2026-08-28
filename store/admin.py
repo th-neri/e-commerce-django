@@ -1,8 +1,30 @@
 from django.contrib import admin
-from django.db.models import Count
+from django.db.models import Count, QuerySet
 from django.utils.html import format_html, urlencode
 from django.urls import reverse
 from . import models
+
+#to add filter to products with low, ok, and high inventory
+class InventoryFilter(admin.SimpleListFilter):
+    title = 'inventory'
+    parameter_name = 'inventory'
+
+    def lookups(self, request, model_admin):
+        return [
+            ('low', 'Low'),
+            ('ok', 'Ok'),
+            ('high', 'High')
+        ]
+
+    def queryset(self, request, queryset: QuerySet):
+        if self.value() == 'low':
+            return queryset.filter(inventory__lte=10)
+
+        if self.value() == 'ok':
+            return queryset.filter(inventory__gt=10, inventory__lte=20)
+
+        if self.value() == 'high':
+            return queryset.filter(inventory__gt=20)
 
 @admin.register(models.Collection)
 class CollectionAdmin(admin.ModelAdmin):
@@ -27,8 +49,9 @@ class CollectionAdmin(admin.ModelAdmin):
 
 @admin.register(models.Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ['title', 'unit_price', 'inventory_status', 'collection_title']
+    list_display = ['title', 'unit_price', 'inventory', 'collection_title']
     list_editable = ['unit_price']
+    list_filter = ['collection', 'last_update', InventoryFilter]
     ordering = ['title']
     list_per_page = 15
 
@@ -49,6 +72,7 @@ class CustomerAdmin(admin.ModelAdmin):
     list_editable = ['membership']
     ordering = ['first_name']
     list_per_page = 15
+    search_fields = ['first_name__istartswith', 'last_name__istartswith']
 
     #to count the quantity of orders of every customer and provide the link to the customer page
     #where you can see every order of a specific customer
