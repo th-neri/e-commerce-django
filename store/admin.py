@@ -1,4 +1,4 @@
-from django.contrib import admin
+from django.contrib import admin, messages
 from django.db.models import Count, QuerySet
 from django.utils.html import format_html, urlencode
 from django.urls import reverse
@@ -30,6 +30,7 @@ class InventoryFilter(admin.SimpleListFilter):
 class CollectionAdmin(admin.ModelAdmin):
     list_display = ['title', 'product_count']
     ordering = ['title']
+    search_fields = ['title']
 
     #to count the quantity of products of every collection and provide the link to the product page
     #where you can see every product of a specific collection
@@ -49,7 +50,12 @@ class CollectionAdmin(admin.ModelAdmin):
 
 @admin.register(models.Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ['title', 'unit_price', 'inventory', 'collection_title']
+    autocomplete_fields = ['collection']
+    prepopulated_fields= {
+        'slug': ['title']
+    }
+    actions = ['clear_inventory']
+    list_display = ['title', 'unit_price', 'inventory_status', 'collection_title']
     list_editable = ['unit_price']
     list_filter = ['collection', 'last_update', InventoryFilter]
     ordering = ['title']
@@ -65,6 +71,16 @@ class ProductAdmin(admin.ModelAdmin):
             return 'Ok'
         else:
             return 'High'
+
+    #a customized action to update(clear) the inventory of products
+    @admin.action(description='Clear inventory')
+    def clear_inventory(self, request, queryset):
+        update_count = queryset.update(inventory=0)
+        self.message_user(
+            request,
+            f'{update_count} product(s) were successfully updated!',
+            messages.ERROR
+        )
 
 @admin.register(models.Customer)
 class CustomerAdmin(admin.ModelAdmin):
@@ -92,6 +108,7 @@ class CustomerAdmin(admin.ModelAdmin):
 
 @admin.register(models.Order)
 class OrderAdmin(admin.ModelAdmin):
+    autocomplete_fields = ['customer']
     list_display = ['placed_at', 'payment_status', 'customer']
     list_editable = ['payment_status']
     ordering = ['placed_at']
