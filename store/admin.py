@@ -55,6 +55,7 @@ class ProductAdmin(admin.ModelAdmin):
         'slug': ['title']
     }
     actions = ['clear_inventory']
+    search_fields = ['title']
     list_display = ['title', 'unit_price', 'inventory_status', 'collection_title']
     list_editable = ['unit_price']
     list_filter = ['collection', 'last_update', InventoryFilter]
@@ -106,9 +107,17 @@ class CustomerAdmin(admin.ModelAdmin):
             total_orders=Count('order')
         )
 
+class OrderItemInLine(admin.TabularInline):
+    autocomplete_fields = ['product']
+    min_num = 1
+    max_num = 10
+    model = models.OrderItem
+    extra = 0 
+
 @admin.register(models.Order)
 class OrderAdmin(admin.ModelAdmin):
     autocomplete_fields = ['customer']
+    inlines = [OrderItemInLine]
     list_display = ['placed_at', 'payment_status', 'customer']
     list_editable = ['payment_status']
     ordering = ['placed_at']
