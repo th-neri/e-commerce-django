@@ -8,7 +8,13 @@ router.register('collections', views.CollectionViewSet)
 router.register('carts', views.CartViewSet)
 router.urls
 
+# the product lookup is the product_pk extracted from the ReviewViewSet get_queryset
 products_router = routers.NestedDefaultRouter(router, 'products', lookup='product')
 products_router.register('reviews', views.ReviewViewSet, basename='product-reviews')
 
-urlpatterns = router.urls + products_router.urls
+# the cart lookup is the cart_pk extracted from the CartItemViewSet get_queryset
+carts_router = routers.NestedDefaultRouter(router, 'carts', lookup='cart')
+carts_router.register('items', views.CartItemViewSet, basename='cart-items')
+
+
+urlpatterns = router.urls + products_router.urls + carts_router.urls
