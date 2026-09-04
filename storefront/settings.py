@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/6.1/ref/settings/
 """
 
 from pathlib import Path
+from datetime import timedelta
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -39,6 +40,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django_filters',
     'rest_framework',
+    'djoser',
     'playground',
     'store',
     'tags',
@@ -138,8 +140,25 @@ MAILERS = {
 
 REST_FRAMEWORK = {
     'COERCE_DECIMAL_TO_STRING': False,
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
     # 'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination', # to set pagination everywhere
+}
+
+SIMPLE_JWT = {
+   'AUTH_HEADER_TYPES': ('JWT',),
+   'ACCESS_TOKEN_LIFETIME': timedelta(days=1) # changed the valid lifetime of the access token to one day instead of 5 minutes by default
 }
 
 # to set off User model to our custom model User(AbstractUser)
 AUTH_USER_MODEL = 'core.User'
+
+DJOSER = {
+    'SERIALIZERS': {
+        # to register the UserCreateSerializer so when the user creates an account it includes first_name and last_name
+        'user_create': 'core.serializers.UserCreateSerializer', 
+        # to includes first_name and last_name when i access the auth/users/me endpoint
+        'current_user': 'core.serializers.UserSerializer'
+    }
+}

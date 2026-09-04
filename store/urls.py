@@ -6,6 +6,7 @@ router = routers.DefaultRouter()
 router.register('products', views.ProductViewSet, basename='products')
 router.register('collections', views.CollectionViewSet)
 router.register('carts', views.CartViewSet)
+router.register('customers', views.CustomerViewSet)
 router.urls
 
 # the product lookup is the product_pk extracted from the ReviewViewSet get_queryset
