@@ -42,8 +42,8 @@ INSTALLED_APPS = [
     'playground',
     'store',
     'tags',
-    'store_custom',
     'likes',
+    'core', 
 ]
 
 MIDDLEWARE = [
@@ -140,3 +140,6 @@ REST_FRAMEWORK = {
     'COERCE_DECIMAL_TO_STRING': False,
     # 'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination', # to set pagination everywhere
 }
+
+# to set off User model to our custom model User(AbstractUser)
+AUTH_USER_MODEL = 'core.User'
