@@ -53,6 +53,8 @@ MIDDLEWARE = [
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
+    # this middleware help inspect the incoming request and if there is information about the user
+    # is is going to retrieve the user from database and attached it to request object
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -143,11 +145,14 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
+    # 'DEFAULT_PERMISSION_CLASSES': [
+    #     'rest_framework.permissions.IsAuthenticated' # all the API endpoints will be closed unless the user is authenticated
+    # ]
     # 'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination', # to set pagination everywhere
 }
 
 SIMPLE_JWT = {
-   'AUTH_HEADER_TYPES': ('JWT',),
+   'AUTH_HEADER_TYPES': ('JWT',), 
    'ACCESS_TOKEN_LIFETIME': timedelta(days=1) # changed the valid lifetime of the access token to one day instead of 5 minutes by default
 }
 
@@ -156,9 +161,11 @@ AUTH_USER_MODEL = 'core.User'
 
 DJOSER = {
     'SERIALIZERS': {
-        # to register the UserCreateSerializer so when the user creates an account it includes first_name and last_name
+        # to register the UserCreateSerializer so when the user creates an account using auth/users it includes first_name and last_name
         'user_create': 'core.serializers.UserCreateSerializer', 
-        # to includes first_name and last_name when i access the auth/users/me endpoint
+        # to includes first_name and last_name when the user access the auth/users/me endpoint
         'current_user': 'core.serializers.UserSerializer'
     }
 }
+
+# auth/jwt/create to create an access token and jwt/refresh to get a new access token

@@ -1,6 +1,8 @@
 from django.db.models import Count
 from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated, AllowAny, IsAdminUser, DjangoModelPermissions
 from rest_framework.viewsets import ModelViewSet, GenericViewSet # ReadOnlyModelViewSet(only to read, cannot create, update or delete)
 from rest_framework.mixins import CreateModelMixin, RetrieveModelMixin, UpdateModelMixin, DestroyModelMixin
 from rest_framework.filters import SearchFilter, OrderingFilter 
@@ -11,6 +13,7 @@ from .serializers import (ProductSerializer, CollectionSerializer, ReviewSeriali
                         )
 from .filters import ProductFilter
 from .pagination import DefaultPagination
+from .permissions import IsAdminOrReadOnly
 
 # PRODUCT CLASSES
 class ProductViewSet(ModelViewSet):
@@ -21,6 +24,7 @@ class ProductViewSet(ModelViewSet):
     pagination_class = DefaultPagination
     search_fields = ['title', 'description']  # to search specific fielders
     ordering_fields = ['unit_price', 'last_update'] # to order products using ascending or descending
+    permission_classes = [IsAdminOrReadOnly]
 
     def get_serializer_context(self):
         return {'request': self.request}
@@ -36,6 +40,7 @@ class CollectionViewSet(ModelViewSet):
     # annotating the collection and sending to the queryset
     queryset = Collection.objects.annotate(products_count=Count('products')).all()
     serializer_class = CollectionSerializer
+    permission_classes = [IsAdminOrReadOnly]
 
     def destroy(self, request, *args, **kwargs):
         if Product.objects.filter(collection_id=kwargs['pk']).count() > 0:
@@ -81,8 +86,30 @@ class CartItemViewSet(ModelViewSet):
             return UpdateCartItemSerializer
         return CartItemSerializer
 
-class CustomerViewSet(CreateModelMixin, RetrieveModelMixin, UpdateModelMixin, GenericViewSet):
+class CustomerViewSet(ModelViewSet):
     queryset = Customer.objects.all()
     serializer_class = CustomerSerializer
+    permission_classes = [IsAdminUser] # only admin users are able to retrieve customer object
+
+    # any user can retrieve customer object but only authenticated or admin users are able to update
+    # def get_permissions(self):
+    #     if self.request.method == 'GET':
+    #         return [AllowAny()]
+    #     return [IsAuthenticated()]
+
+    @action(detail=False, methods=['GET', 'PUT'], permission_classes=[IsAdminOrReadOnly])
+    def me(self, request):
+        # (customer) to unpack the tuple to get the customer object and add created
+        # use request.user.id to check if the user is logged in or not, if yes it will retrieve the customer with the user id
+        # and if the user doesn't have a record it will get created because of get_or_create
+        (customer, created) = Customer.objects.get_or_create(user_id=request.user.id)
+        if request.method == 'GET':
+            serializer = CustomerSerializer(customer)
+            return Response(serializer.data)
+        elif request.method == 'PUT':
+            serializer = CustomerSerializer(customer, data=request.data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response(serializer.data)
     
 
