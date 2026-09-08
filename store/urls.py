@@ -2,11 +2,13 @@ from django.urls import path
 from rest_framework_nested import routers
 from . import views
 
+# the basenames are to generate the name of the views(products-list, products-detail)
 router = routers.DefaultRouter()
 router.register('products', views.ProductViewSet, basename='products')
 router.register('collections', views.CollectionViewSet)
 router.register('carts', views.CartViewSet)
 router.register('customers', views.CustomerViewSet)
+router.register('orders', views.OrderViewSet, basename='orders')
 router.urls
 
 # the product lookup is the product_pk extracted from the ReviewViewSet get_queryset and to access the review products/<id>/reviews

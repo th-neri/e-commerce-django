@@ -2,18 +2,18 @@ from django.db.models import Count
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated, AllowAny, IsAdminUser, DjangoModelPermissions
+from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from rest_framework.viewsets import ModelViewSet, GenericViewSet # ReadOnlyModelViewSet(only to read, cannot create, update or delete)
 from rest_framework.mixins import CreateModelMixin, RetrieveModelMixin, UpdateModelMixin, DestroyModelMixin
 from rest_framework.filters import SearchFilter, OrderingFilter 
 from rest_framework import status
-from .models import Product, Collection, OrderItem, Review, Cart, CartItem, Customer
-from .serializers import (ProductSerializer, CollectionSerializer, ReviewSerializer, CartSerializer, 
-                          CartItemSerializer, AddCartItemSerializer, UpdateCartItemSerializer, CustomerSerializer
+from .models import Product, Collection, OrderItem, Review, Cart, CartItem, Customer, Order
+from .serializers import (ProductSerializer, CollectionSerializer, ReviewSerializer, CartSerializer, CartItemSerializer, 
+                          AddCartItemSerializer, UpdateCartItemSerializer, CustomerSerializer, OrderSerializer, CreateOrderSerializer
                         )
 from .filters import ProductFilter
 from .pagination import DefaultPagination
-from .permissions import IsAdminOrReadOnly
+from .permissions import IsAdminOrReadOnly, ViewCustomerHistoryPermission
 
 # PRODUCT CLASSES
 class ProductViewSet(ModelViewSet):
@@ -83,6 +83,7 @@ class CartItemViewSet(ModelViewSet):
         if self.request.method == 'POST':
             return AddCartItemSerializer
         elif self.request.method == 'PATCH':
+            # to update is carts/<cart_id>/items/<product_id>
             return UpdateCartItemSerializer
         return CartItemSerializer
 
@@ -96,6 +97,10 @@ class CustomerViewSet(ModelViewSet):
     #     if self.request.method == 'GET':
     #         return [AllowAny()]
     #     return [IsAuthenticated()]
+
+    @action(detail=True, permission_classes=[ViewCustomerHistoryPermission])
+    def history(self, request, pk):
+        return Response('ok')
 
     @action(detail=False, methods=['GET', 'PUT'], permission_classes=[IsAdminOrReadOnly])
     def me(self, request):
@@ -111,5 +116,32 @@ class CustomerViewSet(ModelViewSet):
             serializer.is_valid(raise_exception=True)
             serializer.save()
             return Response(serializer.data)
-    
 
+class OrderViewSet(ModelViewSet):
+    permission_classes = [IsAuthenticated]
+
+    # implemented a create method from scratch instead of rely on the create model mixin,
+    # so i give the request data, validate the data, save the changes and create another serializer 
+    # giving the order object from the save method
+    def create(self, request, *args, **kwargs):
+        serializer = CreateOrderSerializer(data=request.data, context={'user_id': self.request.user.id})
+        serializer.is_valid(raise_exception=True)
+        order = serializer.save()
+        serializer = OrderSerializer(order)
+        return Response(serializer.data)
+
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return CreateOrderSerializer
+        return OrderSerializer
+
+    def get_queryset(self):
+        user = self.request.user
+
+        if user.is_staff:
+            return Order.objects.all()
+
+        # first value(customer_id) is the object we reading and second is a boolean 
+        # that indicates if the record was created or not
+        (customer_id, created) = Customer.objects.only('id').get_or_create(user_id=user.id)
+        return Order.objects.filter(customer_id=customer_id)
