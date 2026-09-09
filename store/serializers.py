@@ -1,6 +1,7 @@
 from decimal import Decimal
 from django.db import transaction
 from rest_framework import serializers
+from .signals import order_created
 from .models import Product, Collection, Review, Cart, CartItem, Customer, Order, OrderItem
 
 class CollectionSerializer(serializers.ModelSerializer):
@@ -119,8 +120,21 @@ class OrderSerializer(serializers.ModelSerializer):
         model = Order
         fields = ['id', 'customer', 'placed_at', 'payment_status', 'items']
 
+class UpdateOrderSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Order
+        fields = ['payment_status']
+
 class CreateOrderSerializer(serializers.Serializer):
     cart_id = serializers.UUIDField()
+
+    # if the cart_id doesn't exist or the cart is empty, a validation error will raise
+    def validate_cart_id(self, cart_id):
+        if not Cart.objects.filter(pk=cart_id).exists():
+            raise serializers.ValidationError('No cart with the given ID was found.')
+        elif CartItem.objects.filter(cart_id=cart_id).count() == 0:
+            raise serializers.ValidationError('The cart is empty.')
+        return cart_id
 
     def save(self, **kwargs):
         # if the database server goes offline, use transaction.atomic to avoid inconsistent state and missing data
@@ -129,7 +143,7 @@ class CreateOrderSerializer(serializers.Serializer):
             cart_id = self.validated_data['cart_id']
 
             # can't use the request object inside the serializer so i have to use a context object to pass the user_id here
-            (customer, created) = Customer.objects.get_or_create(user_id=self.context['user_id'])
+            customer = Customer.objects.get(user_id=self.context['user_id'])
             order = Order.objects.create(customer=customer)
 
             # to create order_items, first i need to get items in the cart(cart_id) and for each cart item
@@ -147,6 +161,10 @@ class CreateOrderSerializer(serializers.Serializer):
             OrderItem.objects.bulk_create(order_items)
 
             Cart.objects.filter(pk=cart_id).delete()
+
+            # __class__ is an attribute that returns the class of the current instance and order is the optional 
+            # date that was created, so everytime an order is created the signal is fired
+            order_created.send_robust(self.__class__, order=order)
 
             return order
 

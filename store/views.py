@@ -9,11 +9,12 @@ from rest_framework.filters import SearchFilter, OrderingFilter
 from rest_framework import status
 from .models import Product, Collection, OrderItem, Review, Cart, CartItem, Customer, Order
 from .serializers import (ProductSerializer, CollectionSerializer, ReviewSerializer, CartSerializer, CartItemSerializer, 
-                          AddCartItemSerializer, UpdateCartItemSerializer, CustomerSerializer, OrderSerializer, CreateOrderSerializer
+                          AddCartItemSerializer, UpdateCartItemSerializer, CustomerSerializer, OrderSerializer, 
+                          CreateOrderSerializer, UpdateOrderSerializer
                         )
 from .filters import ProductFilter
 from .pagination import DefaultPagination
-from .permissions import IsAdminOrReadOnly, ViewCustomerHistoryPermission
+from .permissions import IsAdminOrReadOnly, ViewCustomerHistoryPermission, IsUserSelfPermission
 
 # PRODUCT CLASSES
 class ProductViewSet(ModelViewSet):
@@ -60,6 +61,7 @@ class ReviewViewSet(ModelViewSet):
     def get_serializer_context(self):
         return {'product_id': self.kwargs['product_pk']}
 
+# CART CLASS
 class CartViewSet(CreateModelMixin, GenericViewSet, RetrieveModelMixin, DestroyModelMixin):
     queryset = Cart.objects.prefetch_related('items__product').all()
     serializer_class = CartSerializer
@@ -87,6 +89,7 @@ class CartItemViewSet(ModelViewSet):
             return UpdateCartItemSerializer
         return CartItemSerializer
 
+#CUSTOMER CLASS
 class CustomerViewSet(ModelViewSet):
     queryset = Customer.objects.all()
     serializer_class = CustomerSerializer
@@ -102,12 +105,10 @@ class CustomerViewSet(ModelViewSet):
     def history(self, request, pk):
         return Response('ok')
 
-    @action(detail=False, methods=['GET', 'PUT'], permission_classes=[IsAdminOrReadOnly])
+    @action(detail=False, methods=['GET', 'PUT'], permission_classes=[IsUserSelfPermission])
     def me(self, request):
-        # (customer) to unpack the tuple to get the customer object and add created
-        # use request.user.id to check if the user is logged in or not, if yes it will retrieve the customer with the user id
-        # and if the user doesn't have a record it will get created because of get_or_create
-        (customer, created) = Customer.objects.get_or_create(user_id=request.user.id)
+        # use request.user.id to check if the user is logged in or not
+        customer = Customer.objects.get(user_id=request.user.id)
         if request.method == 'GET':
             serializer = CustomerSerializer(customer)
             return Response(serializer.data)
@@ -117,8 +118,14 @@ class CustomerViewSet(ModelViewSet):
             serializer.save()
             return Response(serializer.data)
 
+#ORDER CLASS
 class OrderViewSet(ModelViewSet):
-    permission_classes = [IsAuthenticated]
+    http_method_names = ['get', 'post', 'patch', 'delete', 'head', 'options']
+
+    def get_permissions(self):
+        if self.request.method in ['PATCH', 'DELETE']:
+            return [IsAdminUser()]
+        return [IsAuthenticated()]
 
     # implemented a create method from scratch instead of rely on the create model mixin,
     # so i give the request data, validate the data, save the changes and create another serializer 
@@ -133,6 +140,8 @@ class OrderViewSet(ModelViewSet):
     def get_serializer_class(self):
         if self.request.method == 'POST':
             return CreateOrderSerializer
+        elif self.request.method == 'PATCH':
+            return UpdateOrderSerializer
         return OrderSerializer
 
     def get_queryset(self):
@@ -143,5 +152,5 @@ class OrderViewSet(ModelViewSet):
 
         # first value(customer_id) is the object we reading and second is a boolean 
         # that indicates if the record was created or not
-        (customer_id, created) = Customer.objects.only('id').get_or_create(user_id=user.id)
+        customer_id = Customer.objects.only('id').get(user_id=user.id)
         return Order.objects.filter(customer_id=customer_id)

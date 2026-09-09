@@ -8,6 +8,12 @@ class IsAdminOrReadOnly(permissions.BasePermission):
             return True
         return bool(request.user and request.user.is_staff) # if request user is set and if the user is staff then return true
 
+class IsUserSelfPermission(permissions.BasePermission):
+    def has_object_permission(self, request, view, obj):
+        if request.user and request.user.is_staff:  # allow access to the user and full access to admins
+            return True
+        return obj.user == request.user # obj.user == request.user ensures the user can only access their own customers/me
+
 # can't have access to GET unless relevant model permission unlike DjangoModelPermissions that the user is able to retrieve customers
 class FullDjangoModelPermissions(permissions.DjangoModelPermissions):
     def __init__(self) -> None:
