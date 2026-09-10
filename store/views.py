@@ -7,10 +7,10 @@ from rest_framework.viewsets import ModelViewSet, GenericViewSet # ReadOnlyModel
 from rest_framework.mixins import CreateModelMixin, RetrieveModelMixin, UpdateModelMixin, DestroyModelMixin
 from rest_framework.filters import SearchFilter, OrderingFilter 
 from rest_framework import status
-from .models import Product, Collection, OrderItem, Review, Cart, CartItem, Customer, Order
+from .models import Product, Collection, OrderItem, Review, Cart, CartItem, Customer, Order, ProductImage
 from .serializers import (ProductSerializer, CollectionSerializer, ReviewSerializer, CartSerializer, CartItemSerializer, 
                           AddCartItemSerializer, UpdateCartItemSerializer, CustomerSerializer, OrderSerializer, 
-                          CreateOrderSerializer, UpdateOrderSerializer
+                          CreateOrderSerializer, UpdateOrderSerializer, ProductImageSerializer
                         )
 from .filters import ProductFilter
 from .pagination import DefaultPagination
@@ -18,7 +18,7 @@ from .permissions import IsAdminOrReadOnly, ViewCustomerHistoryPermission, IsUse
 
 # PRODUCT CLASSES
 class ProductViewSet(ModelViewSet):
-    queryset = Product.objects.all().order_by('id')
+    queryset = Product.objects.all().prefetch_related('images').order_by('id')
     serializer_class = ProductSerializer
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_class = ProductFilter # to get products of a specific collection or price
@@ -35,6 +35,15 @@ class ProductViewSet(ModelViewSet):
             return Response({'error: Product cannot be deleted because it is associated with an order item'},
                                 status=status.HTTP_405_METHOD_NOT_ALLOWED)
         return super().destroy(request, *args, **kwargs)
+
+class ProductImageViewSet(ModelViewSet):
+    serializer_class = ProductImageSerializer
+
+    def get_queryset(self):
+        return ProductImage.objects.filter(product_id=self.kwargs['product_pk'])
+
+    def get_serializer_context(self):
+        return {'product_id': self.kwargs['product_pk']}
 
 # COLLECTION CLASSES
 class CollectionViewSet(ModelViewSet):
@@ -53,11 +62,12 @@ class CollectionViewSet(ModelViewSet):
 class ReviewViewSet(ModelViewSet):
     serializer_class = ReviewSerializer
 
-    # applied a filter so i can only see the reviews of the product i selected
+    # applied a filter to get the product ID from the URL so i can only see the reviews of the product i selected
     def get_queryset(self):
         return Review.objects.filter(product_id=self.kwargs['product_pk'])
 
-    # to provide aditional data to the serializer
+    # using the context object to pass the product_pk to the serializer, so the serializer will grab it from context
+    # and create a product image object
     def get_serializer_context(self):
         return {'product_id': self.kwargs['product_pk']}
 
