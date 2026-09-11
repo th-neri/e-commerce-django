@@ -12,13 +12,14 @@ class CollectionSerializer(serializers.ModelSerializer):
     products_count = serializers.IntegerField(read_only=True)
 
 class ProductImageSerializer(serializers.ModelSerializer):
-    def create(self, validated_data):
-        product_id = self.context['product_id']
-        return ProductImage.objects.create(product_id=product_id, **validated_data)
-
     class Meta:
         model = ProductImage
         fields = ['id', 'image']
+
+    # to extract the product_id from the serializer context, create and return the new image
+    def create(self, validated_data):
+        product_id = self.context['product_id']
+        return ProductImage.objects.create(product_id=product_id, **validated_data)
 
 class ProductSerializer(serializers.ModelSerializer):
     images = ProductImageSerializer(many=True, read_only=True)
@@ -42,8 +43,7 @@ class ReviewSerializer(serializers.ModelSerializer):
         model = Review
         fields = ['id', 'name', 'description', 'date']
 
-    # to take the aditional data(the product_id from the serializer context) 
-    # so the user doesn't have to specify the id of the product
+    # to extract the product_id from the serializer context, create and return the new review
     def create(self, validated_data):
         product_id = self.context['product_id']
         return Review.objects.create(product_id=product_id, **validated_data)

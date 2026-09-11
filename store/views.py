@@ -39,9 +39,12 @@ class ProductViewSet(ModelViewSet):
 class ProductImageViewSet(ModelViewSet):
     serializer_class = ProductImageSerializer
 
+    # applied a filter to get the product ID from the URL so it only return the images of a particular product
     def get_queryset(self):
         return ProductImage.objects.filter(product_id=self.kwargs['product_pk'])
 
+    # extracting the product pk(product ID) from URL and using the context i will pass to the serializer 
+    # and then the serializer will grab it and use to create a product image object
     def get_serializer_context(self):
         return {'product_id': self.kwargs['product_pk']}
 
@@ -62,12 +65,9 @@ class CollectionViewSet(ModelViewSet):
 class ReviewViewSet(ModelViewSet):
     serializer_class = ReviewSerializer
 
-    # applied a filter to get the product ID from the URL so i can only see the reviews of the product i selected
     def get_queryset(self):
         return Review.objects.filter(product_id=self.kwargs['product_pk'])
 
-    # using the context object to pass the product_pk to the serializer, so the serializer will grab it from context
-    # and create a product image object
     def get_serializer_context(self):
         return {'product_id': self.kwargs['product_pk']}
 
