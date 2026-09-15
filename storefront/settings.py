@@ -180,3 +180,16 @@ DJOSER = {
 }
 
 # auth/jwt/create to create an access token and jwt/refresh to get a new access token
+
+MAILERS = {
+    "default": {
+        "BACKEND": "django.core.mail.backends.smtp.EmailBackend",
+        "OPTIONS": {
+            "host": "localhost",
+            "port": 25,
+        },
+    }
+}
+
+# setting celery to the radis server so celery knows how to find the settings
+CELERY_BROKER_URL = 'redis://localhost:6379/1'
