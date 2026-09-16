@@ -16,8 +16,12 @@ django-cors-headers = "*"
 django-templated-mail = "*"
 redis = "*"
 celery = "*"
+flower = "*"
 
 [dev-packages]
+pytest = "*"
+pytest-django = "*"
+model-bakery = "*"
 
 [requires]
 python_version = "3.14"
