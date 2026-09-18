@@ -18,3 +18,5 @@ if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
     # with this line up here, i am telling django i want to expose an endpoint(MEDIA_URL)
     # and any request that goes to that endpoint should be routed to the file system at the MEDIA_ROOT address
+
+urlpatterns += [path('silk/', include('silk.urls', namespace='silk'))]

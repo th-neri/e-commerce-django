@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'rest_framework',
     'djoser',
+    'silk',
     'playground',
     'store',
     'tags',
@@ -62,6 +63,9 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+# if DEBUG:
+#     MIDDLEWARE += ['silk.middleware.SilkyMiddleware']
 
 # to specify what origins or domains can send requests to here(backend)
 CORS_ALLOWED_ORIGINS = [
