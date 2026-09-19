@@ -31,3 +31,7 @@ class WebsiteUser(HttpUser):
         result = response.json() # to get the JSON object in the response
         self.cart_id = result['id']
 
+    @task
+    def say_hello(self):
+        self.client.get('/playground/hello/')
+
