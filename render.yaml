@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: storefront
+    runtime: python
+    buildCommand: "./build.sh"
+    startCommand: "gunicorn storefront.wsgi:application"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: SECRET_KEY
+        generateValue: true

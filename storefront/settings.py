@@ -57,11 +57,12 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     # this middleware help inspect the incoming request and if there is information about the user
-    # is is going to retrieve the user from database and attached it to request object
+    # is going to retrieve the user from database and attached it to request object
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -150,6 +151,15 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 MEDIA_URL = '/media/' # an endpoint to expose the media or to upload files
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media') # to tell django where the media files are stored in the file system
 
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
+
 
 # Email
 # https://docs.djangoproject.com/en/6.1/topics/email/#topic-email-configuration
@@ -215,5 +225,32 @@ CACHES = {
         "BACKEND": "django_redis.cache.RedisCache",
         "LOCATION": "redis://127.0.0.1:6379/2", # changed to 2 because already using 1 as a message broker up there
         "TIMEOUT": 10 * 60,
+    }
+}
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler' # with this class i can write log messages to the console
+        },
+        'file': {
+            'class': 'logging.FileHandler',
+            'filename': 'general.log',
+            'formatter': 'verbose'
+        }
+    },
+    'loggers': {
+        '': { # this way i can capture all the log messages in the project
+            'handlers': ['console', 'file'], # once the log messages are captured write them to the console and file
+            'level': os.environ.get('DJANGO_LOG_LEVEL', 'INFO') # levels categorize the severity or purpose of log messages. 
+        },
+    },
+    'formatters': { # how the log messages should be formatted
+        'verbose': {
+            'format': '{asctime} ({levelname}) - {name} - {message}',
+            'style': '{' # preference on how i want to format the strings
+        },
     }
 }
