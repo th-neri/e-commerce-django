@@ -25,12 +25,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/6.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-h5pn@j67-3d!nsu7@j@b30j6godj^k-r(+ly82#+d1yqif1%#q'
+SECRET_KEY = os.environ.get('SECRET_KEY', '93c1b0ee36464df0c6b4f649baa1d014')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get('DEBUG', 'True') == 'True' 
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['.onrender.com', 'localhost', '127.0.0.1']
 
 
 # Application definition
@@ -107,6 +107,7 @@ DATABASES = {
         'HOST': os.getenv('DB_HOST'),
         'USER': os.getenv('DB_USER'),
         'PASSWORD': os.getenv('DB_PASSWORD'),
+        'PORT': os.getenv('DB_PORT'),
     }
 }
 
@@ -164,12 +165,6 @@ STORAGES = {
 # Email
 # https://docs.djangoproject.com/en/6.1/topics/email/#topic-email-configuration
 
-MAILERS = {
-    'default': {
-        'BACKEND': 'django.core.mail.backends.console.EmailBackend',
-    },
-}
-
 REST_FRAMEWORK = {
     'COERCE_DECIMAL_TO_STRING': False,
     'DEFAULT_AUTHENTICATION_CLASSES': (
@@ -211,7 +206,7 @@ MAILERS = {
 }
 
 # setting celery to the radis server so celery knows how to find the settings
-CELERY_BROKER_URL = 'redis://localhost:6379/1'
+CELERY_BROKER_URL = 'redis://127.0.0.1:6379/1'
 CELERY_BEAT_SCHEDULE = {
     'notify_customers': {
         'task': 'playground.tasks.notify_customers',
@@ -223,7 +218,8 @@ CELERY_BEAT_SCHEDULE = {
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": "redis://127.0.0.1:6379/2", # changed to 2 because already using 1 as a message broker up there
+        # changed to 2 because already using 1 as a message broker up there
+        "LOCATION": os.getenv('REDIS_CACHE_URL','redis://127.0.0.1:6379/2'),
         "TIMEOUT": 10 * 60,
     }
 }

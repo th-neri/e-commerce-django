@@ -22,6 +22,7 @@ python-dotenv = "*"
 whitenoise = "*"
 waitress = "*"
 gunicorn = "*"
+django-silk = "*"
 
 [dev-packages]
 pytest = "*"

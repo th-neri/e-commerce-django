@@ -2,7 +2,13 @@
 """Django's command-line utility for administrative tasks."""
 import os
 import sys
+from dotenv import load_dotenv
 
+# if running on render, load the production file otherwise, load development
+if os.getenv('RENDER'):
+    load_dotenv('.env.prod')
+else:
+    load_dotenv('.env.dev')
 
 def main():
     """Run administrative tasks."""

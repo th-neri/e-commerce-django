@@ -61,7 +61,7 @@ class CollectionViewSet(ModelViewSet):
                                     status=status.HTTP_405_METHOD_NOT_ALLOWED)       
         return super().destroy(request, *args, **kwargs)
 
-# REVIEW CLASS
+# REVIEW CLASSES
 class ReviewViewSet(ModelViewSet):
     serializer_class = ReviewSerializer
 
@@ -71,7 +71,7 @@ class ReviewViewSet(ModelViewSet):
     def get_serializer_context(self):
         return {'product_id': self.kwargs['product_pk']}
 
-# CART CLASS
+# CART CLASSES
 class CartViewSet(CreateModelMixin, GenericViewSet, RetrieveModelMixin, DestroyModelMixin):
     queryset = Cart.objects.prefetch_related('items__product').all()
     serializer_class = CartSerializer
@@ -99,7 +99,7 @@ class CartItemViewSet(ModelViewSet):
             return UpdateCartItemSerializer
         return CartItemSerializer
 
-#CUSTOMER CLASS
+# CUSTOMER CLASSES
 class CustomerViewSet(ModelViewSet):
     queryset = Customer.objects.all()
     serializer_class = CustomerSerializer
@@ -128,7 +128,7 @@ class CustomerViewSet(ModelViewSet):
             serializer.save()
             return Response(serializer.data)
 
-#ORDER CLASS
+# ORDER CLASS
 class OrderViewSet(ModelViewSet):
     http_method_names = ['get', 'post', 'patch', 'delete', 'head', 'options']
 
