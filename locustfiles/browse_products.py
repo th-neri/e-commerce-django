@@ -13,14 +13,14 @@ class WebsiteUser(HttpUser):
     # to view a specific product
     @task(4)
     def view_product(self):
-        product_id = randint(3, 100)
+        product_id = randint(1, 100)
         self.client.get(f'/store/products/{product_id}',
                         name='/store/products/:id')
 
     # to add a product to the cart
     @task(1)
     def add_to_cart(self):
-        product_id = randint(3, 10)
+        product_id = randint(1, 10)
         self.client.post(f'/store/carts/{self.cart_id}/items/',
                          name='/store/carts/items',
                          json={'product_id': product_id, 'quantity': 1}) # to send data to the server set json to a dictionary
